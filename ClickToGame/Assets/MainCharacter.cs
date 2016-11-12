@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEngine.UI;
 
 public class MainCharacter : MonoBehaviour
 {
@@ -8,7 +9,7 @@ public class MainCharacter : MonoBehaviour
     // Use this for initialization
 
     [SerializeField]
-    private float m_shot = .5f;
+    public float m_shot = .5f;
 
     [SerializeField]
     private Transform m_parentCharacterTransform;
@@ -19,18 +20,44 @@ public class MainCharacter : MonoBehaviour
     [SerializeField]
     private float m_projectileForce;
 
+    [SerializeField]
+    private Text m_text;
+
+    private int m_score = 0;
+
+    public static MainCharacter ms_instance;
+
+    public void AddPoint()
+    {
+        m_score++;
+        m_text.text = "Score:" + m_score + "\nHighScore:" + PlayerPrefs.GetInt("HighScore", 0);
+
+        if(m_score > PlayerPrefs.GetInt("HighScore", 0))
+        {
+            PlayerPrefs.SetInt("HighScore", m_score);
+        }
+    }
+
+    void Awake()
+    {
+        ms_instance = this;
+
+    }
+
     void Start()
     {
         ChangeDirection();
 
-        StartCoroutine(ShootAtInerval(m_shot));
+        StartCoroutine(ShootAtInerval());
+        AddPoint();
     }
 
-    private IEnumerator ShootAtInerval(float interval)
+    private IEnumerator ShootAtInerval()
     {
         while (true)
         {
-            yield return new WaitForSeconds(interval);
+            yield return new WaitForSeconds(m_shot);
+            m_shot *= .99f;
 
             Projectile projectile = (GameObject.Instantiate(m_gameobject, transform.position, new Quaternion(0,0,0,0), null) as GameObject).GetComponent<Projectile>();
 
@@ -51,12 +78,14 @@ public class MainCharacter : MonoBehaviour
     void AddTimeDilation(float amount)
     {
         Time.timeScale = Mathf.Clamp(Time.timeScale + amount, 0.1f, 2.0f);
+        
     }
 
     // Update is called once per frame
     void Update()
     {
         Time.timeScale = Mathf.Lerp(Time.timeScale, .1f, Time.deltaTime);
+        Time.fixedDeltaTime = .02f * Time.timeScale;
 
         Cursor.visible = false;
 
